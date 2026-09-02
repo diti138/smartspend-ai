@@ -33,6 +33,7 @@ if st.button("Add Expense"):
     else:
         st.warning("Please enter an amount greater than 0.")
 
+
 # Show expenses
 if st.session_state.expenses:
     st.header("📊 Expense Summary")
@@ -41,31 +42,51 @@ if st.session_state.expenses:
 
     st.dataframe(df)
 
-    total = df["Amount"].sum()
-    st.metric("Total Expenses", f"₹{total:.2f}")
+    # Delete expense section
+    st.subheader("🗑️ Delete an Expense")
 
-    st.subheader("Category-wise Spending")
-    category_data = df.groupby("Category")["Amount"].sum()
-    st.bar_chart(category_data)
+    expense_options = [
+        f"{i + 1}. ₹{expense['Amount']} - {expense['Category']} - {expense['Description']}"
+        for i, expense in enumerate(st.session_state.expenses)
+    ]
 
-    # Simple AI-style insights
-    st.header("🤖 SmartSpend Insights")
-
-    highest_category = category_data.idxmax()
-    highest_amount = category_data.max()
-
-    st.write(
-        f"Your highest spending category is **{highest_category}** "
-        f"with ₹{highest_amount:.2f}."
+    selected_expense = st.selectbox(
+        "Select an expense to delete",
+        range(len(expense_options)),
+        format_func=lambda x: expense_options[x]
     )
 
-    if highest_amount > total * 0.4:
-        st.warning(
-            f"You are spending a significant portion of your money on "
-            f"{highest_category}. Consider reviewing this category."
-        )
-    else:
-        st.success("Your spending appears reasonably balanced!")
+    if st.button("Delete Selected Expense"):
+        st.session_state.expenses.pop(selected_expense)
+        st.success("Expense deleted successfully!")
+        st.rerun()
 
-else:
-    st.info("Add your first expense to see insights!")
+    # Recreate dataframe after deletion
+    df = pd.DataFrame(st.session_state.expenses)
+
+    if not df.empty:
+        total = df["Amount"].sum()
+        st.metric("Total Expenses", f"₹{total:.2f}")
+
+        st.subheader("Category-wise Spending")
+        category_data = df.groupby("Category")["Amount"].sum()
+        st.bar_chart(category_data)
+
+        # Smart insights
+        st.header("🤖 SmartSpend Insights")
+
+        highest_category = category_data.idxmax()
+        highest_amount = category_data.max()
+
+        st.write(
+            f"Your highest spending category is **{highest_category}** "
+            f"with ₹{highest_amount:.2f}."
+        )
+
+        if highest_amount > total * 0.4:
+            st.warning(
+                f"You are spending a significant portion of your money on "
+                f"{highest_category}. Consider reviewing this category."
+            )
+        else:
+            st.success("Your spending appears reasonably balanced!")
